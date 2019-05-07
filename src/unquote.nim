@@ -50,12 +50,12 @@ proc unquote(exp: NimNode,
 {.hint[XDeclaredButNotUsed]: off.}    
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
-  when debug:
+  when defined(debugging):
     debugEcho(acc)
     debugEcho(result.treeRepr)
   for index in acc:
     result = result[index]
-    when debug:
+    when defined(debugging):
       debugEcho("III",index)
       debugEcho(result.repr)
       debugEcho("=======")
@@ -69,40 +69,41 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     debugEcho("fwee ",acc)
     exp[acc[0]] = value
     return
-  when debug:
+  when defined(debugging):
     debugEcho("set ACC ",acc)
     debugEcho(exp.repr)
     debugEcho("..........................")
   var cur = exp
   for index in acc[0..^2]:
     cur = cur[index]
-    when debug: debugEcho("at ", index, ' ', cur.repr)
-  when debug:
+    when defined(debugging): debugEcho("at ", index, ' ', cur.repr)
+  when defined(debugging):
     debugEcho("setting at ", acc[acc.len-1], " ", cur[acc[acc.len-1]].repr)
   cur[acc[acc.len-1]] = value
-  when debug:
+  when defined(debugging):
     debugEcho(exp.repr)
     debugEcho("===================")
-    
-macro mongle(exp: untyped): untyped =
-  result = exp
-  let acc = unquote(result)
-  debugEcho("accessors: ", acc)
-  debugEcho(result.repr)
-  debugEcho("===============")
-  for (name, accessor) in acc:
-    debugEcho("\n*** doing accessor ", name,' ', accessor)
-    debugEcho(result.repr)
-    debugEcho("===============")    
-#    debugEcho(" boop ", result[accessor].repr)
-    result[accessor] = newIdentNode("FOOP" & name)
-    debugEcho("---")
-    debugEcho(result.repr)
-    debugEcho("==++++ ===")
-  debugEcho(result.repr)
 
-mongle:
-  let `b` = "42"
-  let `a` = `b`
-  
-echo(FOOPa)
+when isMainModule:    
+  macro mongle(exp: untyped): untyped =
+    result = exp
+    let acc = unquote(result)
+    debugEcho("accessors: ", acc)
+    debugEcho(result.repr)
+    debugEcho("===============")
+    for (name, accessor) in acc:
+      debugEcho("\n*** doing accessor ", name,' ', accessor)
+      debugEcho(result.repr)
+      debugEcho("===============")    
+  #    debugEcho(" boop ", result[accessor].repr)
+      result[accessor] = newIdentNode("FOOP" & name)
+      debugEcho("---")
+      debugEcho(result.repr)
+      debugEcho("==++++ ===")
+    debugEcho(result.repr)
+
+  mongle:
+    let `b` = "42"
+    let `a` = `b`
+
+  echo(FOOPa)
