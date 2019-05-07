@@ -31,18 +31,17 @@ type Checker = type(default_checker)
 proc accessors(exp: NimNode,
                check: Checker = default_checker,
                parent: Accessor = @[]): seq[Derp] {.compileTime.} =
-  debugEcho("Fug")
   var ident: NimNode
   if check(ident, exp):
-    debugEcho("yay ",ident)
     result.add(($ident, parent))
     return
   for index in 0..<exp.len:
-    var childacc = parent
-    debugEcho("foo", childacc)
-    childacc.insert(0,index)
-    debugEcho("bar")
-    debugEcho("childacc ",index, " ", childacc)
+    var childacc: Accessor
+    if parent.len == 0:
+      childacc = @[index]
+    else:
+      childacc = parent
+      childacc.insert(0,index)
     result.add(accessors(exp[index], check, childacc))
 
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
@@ -64,21 +63,15 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     
   
 macro unquote(exp: untyped): untyped =
-  result = newNimNode(nnkStmtList)
-  var derp = exp
-  for thing in accessors(derp):
+  result = exp
+  for thing in accessors(result):
     let name = newIdentNode(thing[0])
     let accessor = thing[1]
-    debugEcho("boing", name, accessor, derp[accessor].repr)
-    derp[accessor] = newIdentNode("FOOP")
-    let expr = quote:
-      let `name`: Accessor = @`accessor`
-    debugEcho(expr.repr)
-    result.add(expr)
+    debugEcho("boing ", name, " ", accessor, " ", result[accessor].repr)
+    result[accessor] = newIdentNode("FOOP")
+  debugEcho(result.repr)
 
 unquote:
-  iz
-  a
-  *test
-  offf [*something]
-  unquoting
+  let *b = "42"
+  let *a = *b
+  
