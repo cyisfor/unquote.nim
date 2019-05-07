@@ -8,8 +8,8 @@ type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
 proc accessors(exp: NimNode,
-               op = nnkPostfix,
-               parent: Accessor): iterator(): Derp =
+               op: NimNodeKind = nnkPostfix,
+               parent: Accessor = @[]): iterator(): Derp =
   iterator it(): Derp {.closure.} =
     var ident: NimNode
     if exp.kind == op:
@@ -26,14 +26,15 @@ proc accessors(exp: NimNode,
     for index in 0..<exp.len:
       var childacc = parent
       childacc.add(index)
-      for thing in accessors(exp[index], op, parent):
+      for thing in accessors(exp[index], op, parent)():
         yield thing
+  return it
 
-macro unquote(exp: untyped, op = nnkPostfix): untyped =
-  for (name, accessor) in accessors(exp, op, @[]):
+macro unquote(op: NimNodeKind = nnkPostfix, exp: untyped): untyped =
+  for (name, accessor) in accessors(exp, op):
     debugEcho(name, accessor)
 
-unquote:
+unquote(nnkPostFix):
   this
   is
   a
