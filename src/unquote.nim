@@ -2,6 +2,8 @@
 # since macros.`[]` doesn't return var NimNode, we're forced to use sequences of indexes
 # rather than real references.
 
+from algorithm import reversed
+
 from macros import NimNodeKind,
                    kind,
                    `[]`,`[]=`,
@@ -11,8 +13,9 @@ from macros import NimNodeKind,
                    newTree,
                    quote,
                    newIdentNode, # quote
-                   add,
-                   treeRepr
+                   add,del,insert,copy,
+                   treeRepr,
+                   newIntLitNode
 
 type Accessor* = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
@@ -74,13 +77,12 @@ proc interpolate(exp: var NimNode, acc: Accessor, values: varargs[NimNode]) {.co
     else:
       exp = newTree(nnkStmtList, values)
     return
-  values.reverse()
   var cur = exp
   for index in acc[0..^2]:
     cur = exp[index]
   let index = acc[^1]
   cur.del(index)
-  for value in values:
+  for value in reversed(values):
     cur.insert(index, value)
   
 when isMainModule:    
@@ -112,14 +114,16 @@ when isMainModule:
       ident = exp[0]
       return true
     return false
-  macro addbranches(exp: untyped): untyped
-    for (name, acc) in unquote(exp, ofbranches):
+  macro addbranches(exp: untyped): untyped =
+    result = exp
+    for (name, acc) in unquote(result, ofbranches):
       debugEcho("ofBranch",name)
-      var branches[3]: NimNode
+      var branches: array[0..3, NimNode]
       for i in 0..<branches.len:
         branches[i] = exp[acc].copy
-        branches[i][0] = newIntLit(i)
-      interpolate(exp, acc, branches)
+        branches[i][0] = newIntLitNode(i)
+      interpolate(result, acc, branches)
+    debugEcho(result.repr)
   let thing = 2
   addbranches:
     case thing:
