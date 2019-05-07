@@ -14,14 +14,13 @@ from macros import NimNodeKind,
                    add,
                    treeRepr
 
-type Accessor = distinct seq[int]
+type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
 proc accessors(exp: NimNode,
                op: string = "*",
                kind: NimNodeKind = nnkPrefix,
                parent: Accessor = @[]): seq[Derp] =
-  debugEcho("kind ",exp.kind, " ", exp.repr)
   if exp.kind == kind and $exp[0] == op:
     let ident = exp[1]
     debugEcho("yay ",ident)
@@ -45,22 +44,19 @@ proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
     return exp[acc[0]]
   return exp[acc[1..^0]]
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
-  if len(acc) == 0:
-    exp = value
-    return
-  if len(acc) == 1:
-    exp[acc[0]] = value
-    return
-  let derp: Accessor = acc[1..^0]
-  exp[acc[0]][derp] = value
+  for index in acc[0..^1]:
+    debugEcho(exp.repr)
+    exp = exp[index]
+  exp[acc[acc.len-1]] = value
+    
   
-macro unquote(opts: static[Opts], exp: untyped): untyped =
+macro unquote(opts: static[Opts], exp: var untyped): untyped =
   result = newNimNode(nnkStmtList)
-  debugEcho("wuh")
   for thing in accessors(exp, opts.op, opts.kind):
     let name = newIdentNode(thing[0])
     let accessor = thing[1]
     debugEcho("boing", name, accessor, exp[accessor].repr)
+    exp[accessor] = newIdentNode("FOOP")
     let expr = quote:
       let `name`: Accessor = @`accessor`
     debugEcho(expr.repr)
