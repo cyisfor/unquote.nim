@@ -17,12 +17,10 @@ from macros import NimNodeKind,
 type Accessor* = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
-static:
-  const debugging {.booldefine.}: bool = false
-
-  when debugging:
-    debugEcho("OSHTINETSH")
-
+#[
+Note: You can write your own checker, which picks out a node type to remove, and replace with
+an ident. An "ofBranch" might be one possibility...
+]#
 
 proc default_checker*(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
   if exp.kind != nnkAccQuoted:
@@ -38,10 +36,6 @@ proc unquote*(exp: NimNode,
              check: Checker = default_checker,
              parent: Accessor = @[]): seq[Derp] {.compileTime.} =
   var ident: NimNode
-  static:
-    when debugging:
-      debugEcho("checking at",parent)
-      debugEcho(exp.repr)
   if check(ident, exp):
     result.add(($ident, parent))
     return
@@ -57,17 +51,8 @@ proc unquote*(exp: NimNode,
 {.hint[XDeclaredButNotUsed]: off.}    
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
-  static:
-    when debugging:
-      debugEcho(acc)
-      debugEcho(result.treeRepr)
   for index in acc:
     result = result[index]
-    static:
-      when debugging:
-        debugEcho("III",index)
-        debugEcho(result.repr)
-        debugEcho("=======")
 
 {.hint[XDeclaredButNotUsed]: off.}    
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
@@ -77,21 +62,27 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   if len(acc) == 1:
     exp[acc[0]] = value
     return
-  static:
-    when debugging:
-      debugEcho("set ACC ",acc)
-      debugEcho(exp.repr)
-      debugEcho("..........................")
   var cur = exp
   for index in acc[0..^2]:
     cur = cur[index]
-    static: when debugging: debugEcho("at ", index, ' ', cur.repr)
-  static: when debugging: debugEcho("setting at ", acc[acc.len-1], " ", cur[acc[acc.len-1]].repr)
   cur[acc[acc.len-1]] = value
-  when debugging:
-    debugEcho(exp.repr)
-    debugEcho("===================")
 
+proc interpolate(exp: var NimNode, acc: Accessor, values: varargs[NimNode]) {.compileTime.} =
+  if len(acc) == 0:
+    if len(values) == 0:
+      exp = values[0]
+    else:
+      exp = newTree(nnkStmtList, values)
+    return
+  values.reverse()
+  var cur = exp
+  for index in acc[0..^2]:
+    cur = exp[index]
+  let index = acc[^1]
+  cur.del(index)
+  for value in values:
+    cur.insert(index, value)
+  
 when isMainModule:    
   macro mongle(exp: untyped): untyped =
     result = exp
@@ -115,3 +106,24 @@ when isMainModule:
     let `a` = `b`
 
   echo(FOOPa)
+
+  proc ofbranches(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
+    if exp.kind == nnkOfBranch:
+      ident = exp[0]
+      return true
+    return false
+  macro addbranches(exp: untyped): untyped
+    for (name, acc) in unquote(exp, ofbranches):
+      debugEcho("ofBranch",name)
+      var branches[3]: NimNode
+      for i in 0..<branches.len:
+        branches[i] = exp[acc].copy
+        branches[i][0] = newIntLit(i)
+      interpolate(exp, acc, branches)
+  let thing = 2
+  addbranches:
+    case thing:
+    of 0:
+      debugEcho("foo")
+    else:
+      debugEcho("bar")
