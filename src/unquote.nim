@@ -24,15 +24,21 @@ proc accessors(exp: NimNode,
     for thing in accessors(exp[index], op, kind, childacc):
       result.add(thing)
 
-macro unquote(opts: static[tuple[op: string,kind: NimNodeKind]] = ("*",nnkPrefix),
-  exp: untyped): untyped =
+type Opts = tuple
+  op: string
+  kind: NimNodeKind
+
+proc opts(op: string = "*", kind: NimNodeKind = nnkPrefix): Opts {.compileTime.} =
+  return (op: op, kind: kind)
+  
+macro unquote(opts: static[Opts] = (op: "*", kind: nnkPrefix), exp: untyped): untyped =
   debugEcho("wuh")
   for thing in accessors(exp, opts.op, opts.kind):
     let name = thing[0]
     let accessor = thing[1]
     debugEcho("boing", name, accessor)
 
-unquote("*"):
+unquote(opts()):
   iz
   a
   *test
