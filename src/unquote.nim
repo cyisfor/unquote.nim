@@ -50,8 +50,8 @@ proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   debugEcho(result.treeRepr)
   for index in acc:
     debugEcho("III",index)
-    debugEcho(result.treeRepr)
     result = result[index]
+    debugEcho("=======")
 
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   if len(acc) == 0:
@@ -61,10 +61,13 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     debugEcho("fwee ",acc)
     exp[acc[0]] = value
     return
+  debugEcho("set",exp.repr,"ACC",acc)
+  var cur = exp
   for index in acc[0..^1]:
     debugEcho("at ", index, ' ', exp.repr)
-    exp = exp[index]
-  exp[acc[acc.len-1]] = value
+    cur = cur[index]
+  debugEcho("setting",exp.repr, "at", acc[acc.len-1])
+  cur[acc[acc.len-1]] = value
     
   
 macro unquote(exp: untyped): untyped =
@@ -73,9 +76,11 @@ macro unquote(exp: untyped): untyped =
   debugEcho("boing ", acc)
   debugEcho(result.repr)
   for (name, accessor) in acc:
-    debugEcho(" ", result[accessor].repr)
-    debugEcho("---")
+    debugEcho("doing", name,accessor)
+    debugEcho(result.repr)
+    debugEcho(" boop ", result[accessor].repr)
     result[accessor] = newIdentNode("FOOP")
+    debugEcho("---")
   debugEcho(result.repr)
 
 unquote:
