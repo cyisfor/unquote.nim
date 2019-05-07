@@ -28,9 +28,9 @@ proc default_checker(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
 
 type Checker = type(default_checker)
   
-proc accessors(exp: NimNode,
-               check: Checker = default_checker,
-               parent: Accessor = @[]): seq[Derp] {.compileTime.} =
+proc unquote(exp: NimNode,
+             check: Checker = default_checker,
+             parent: Accessor = @[]): seq[Derp] {.compileTime.} =
   var ident: NimNode
   debugEcho("checking at",parent)
   debugEcho(exp.repr)
@@ -45,8 +45,9 @@ proc accessors(exp: NimNode,
     else:
       childacc = parent
       childacc.add(index)
-    result.add(accessors(exp[index], check, childacc))
+    result.add(unquote(exp[index], check, childacc))
 
+{.hint[XDeclaredButNotUsed]: off.}    
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
   debugEcho(acc)
@@ -57,6 +58,7 @@ proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
     result = result[index]
     debugEcho("=======")
 
+{.hint[XDeclaredButNotUsed]: off.}    
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   if len(acc) == 0:
     exp = value
@@ -76,12 +78,14 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   
 macro mongle(exp: untyped): untyped =
   result = exp
-  let acc = accessors(result)
-  debugEcho("boing ", acc)
+  let acc = unquote(result)
+  debugEcho("accessors: ", acc)
   debugEcho(result.repr)
+  debugEcho("===============")
   for (name, accessor) in acc:
-    debugEcho("doing", name,accessor)
+    debugEcho("\n*** doing accessor ", name,' ', accessor)
     debugEcho(result.repr)
+    debugEcho("===============")    
 #    debugEcho(" boop ", result[accessor].repr)
     result[accessor] = newIdentNode("FOOP" & name)
     debugEcho("---")
