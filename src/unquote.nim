@@ -46,7 +46,11 @@ proc accessors(exp: NimNode,
 
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
+  debugEcho(acc)
+  debugEcho(result.treeRepr)
   for index in acc:
+    debugEcho("III",index)
+    debugEcho(result.treeRepr)
     result = result[index]
 
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
@@ -65,10 +69,10 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   
 macro unquote(exp: untyped): untyped =
   result = exp
-  for thing in accessors(result):
-    let name = newIdentNode(thing[0])
-    let accessor = thing[1]
-    debugEcho("boing ", name, " ", accessor)
+  let acc = accessors(result)
+  debugEcho("boing ", acc)
+  debugEcho(result.repr)
+  for (name, accessor) in acc:
     debugEcho(" ", result[accessor].repr)
     debugEcho("---")
     result[accessor] = newIdentNode("FOOP")
