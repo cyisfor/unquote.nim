@@ -19,11 +19,11 @@ type Derp = tuple[name: string, acc: Accessor]
 
 
 proc default_checker(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
-  if exp.kind != nnkPrefix:
+  if exp.kind != nnkAccQuoted:
     return false;
-  if $exp[0] != "*":
+  if exp[0].kind != nnkIdent:
     return false
-  ident = exp[1]
+  ident = exp[0]
   return true
 
 type Checker = type(default_checker)
@@ -45,9 +45,10 @@ proc accessors(exp: NimNode,
     result.add(accessors(exp[index], check, childacc))
 
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
-  if len(acc) == 1:
-    return exp[acc[0]]
-  return exp[acc[1..^0]]
+  result = exp
+  for index in acc:
+    result = result[index]
+
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   if len(acc) == 0:
     exp = value
@@ -67,11 +68,13 @@ macro unquote(exp: untyped): untyped =
   for thing in accessors(result):
     let name = newIdentNode(thing[0])
     let accessor = thing[1]
-    debugEcho("boing ", name, " ", accessor, " ", result[accessor].repr)
+    debugEcho("boing ", name, " ", accessor)
+    debugEcho(" ", result[accessor].repr)
+    debugEcho("---")
     result[accessor] = newIdentNode("FOOP")
   debugEcho(result.repr)
 
 unquote:
-  let *b = "42"
-  let *a = *b
+  let `b` = "42"
+  let `a` = `b`
   
