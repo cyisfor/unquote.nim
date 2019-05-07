@@ -17,36 +17,33 @@ from macros import NimNodeKind,
 type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
-type Checker = proc(ident: var NimNode, exp: NimNode): bool
-static:
-  type Checker = proc(ident: var NimNode, exp: NimNode): bool
 
-  proc check(symbol: string = "*", kind: NimNodeKind = nnkPrefix): Checker {.compileTime.} =
-    proc check(ident: var NimNode, exp: NimNode): bool =
-      if exp.kind != kind:
-        return false;
-      if $exp[0] != symbol:
-        return false
-      ident = exp[1]
-      return true
-    return check
+proc default_checker(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
+  if exp.kind != nnkPrefix:
+    return false;
+  if $exp[0] != "*":
+    return false
+  ident = exp[1]
+  return true
 
-  let default_checker = check()
-    
-  proc accessors(exp: NimNode,
-                 check: Checker = default_checker,
-                 parent: Accessor = @[]): seq[Derp] =
-    debugEcho("Fuck!")
-    var ident: NimNode
-    if check(ident, exp):
-      debugEcho("yay ",ident)
-      result.add(($ident, parent))
-      return
-    for index in 0..<exp.len:
-      var childacc = parent
-      childacc.insert(0,index)
-      debugEcho("childacc ",index, " ", childacc)
-      result.add(accessors(exp[index], check, childacc))
+type Checker = type(default_checker)
+  
+proc accessors(exp: NimNode,
+               check: Checker = default_checker,
+               parent: Accessor = @[]): seq[Derp] {.compileTime.} =
+  debugEcho("Fug")
+  var ident: NimNode
+  if check(ident, exp):
+    debugEcho("yay ",ident)
+    result.add(($ident, parent))
+    return
+  for index in 0..<exp.len:
+    var childacc = parent
+    debugEcho("foo", childacc)
+    childacc.insert(0,index)
+    debugEcho("bar")
+    debugEcho("childacc ",index, " ", childacc)
+    result.add(accessors(exp[index], check, childacc))
 
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   if len(acc) == 1:
@@ -79,7 +76,7 @@ macro unquote(exp: untyped): untyped =
     debugEcho(expr.repr)
     result.add(expr)
 
-unquote(opts()):
+unquote:
   iz
   a
   *test
