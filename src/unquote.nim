@@ -17,19 +17,39 @@ from macros import NimNodeKind,
 type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
+proc default_check(ident: var NimNode, exp: NimNode): bool =
+  if exp.kind != nnkPrefix:
+    return false;
+  if $exp[0] != "*":
+    return false
+  ident = exp[1]
+  return true
+
+type Checker = type(default_check)  
+
+proc check(symbol: string = "*", kind: nnkPrefix): Checker =
+  proc check(ident: var NimNode, exp: NimNode): bool =
+    if exp.kind != kind:
+      return false;
+    if $exp[0] != symbol:
+      return false
+    ident = exp[1]
+    return true
+  return check
+  
 proc accessors(exp: NimNode,
-               op: string = "*",
-               kind: NimNodeKind = nnkPrefix,
+               check: Checker = default_check,
                parent: Accessor = @[]): seq[Derp] =
-  if exp.kind == kind and $exp[0] == op:
-    let ident = exp[1]
+  debugEcho("Fuck!")
+  var ident
+  if check(ident, exp):
     debugEcho("yay ",ident)
     result.add(($ident, parent))
     return
   for index in 0..<exp.len:
     var childacc = parent
     childacc.insert(0,index)
-    debugEcho("childacc",childacc)
+    debugEcho("childacc ",index, " ", childacc)
     result.add(accessors(exp[index], op, kind, childacc))
 
 type Opts = tuple
