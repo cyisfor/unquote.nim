@@ -44,7 +44,7 @@ proc accessors(exp: NimNode,
       childacc = @[index]
     else:
       childacc = parent
-      childacc.insert(0,index)
+      childacc.add(index)
     result.add(accessors(exp[index], check, childacc))
 
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
@@ -71,10 +71,10 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     cur = cur[index]
     debugEcho("at ", index, ' ', cur.repr)
   debugEcho("setting",exp.repr, "at", acc[acc.len-1])
-  cur[acc[acc.len-2]] = value
+  cur[acc[acc.len-1]] = value
     
   
-macro unquote(exp: untyped): untyped =
+macro mongle(exp: untyped): untyped =
   result = exp
   let acc = accessors(result)
   debugEcho("boing ", acc)
@@ -82,12 +82,15 @@ macro unquote(exp: untyped): untyped =
   for (name, accessor) in acc:
     debugEcho("doing", name,accessor)
     debugEcho(result.repr)
-    debugEcho(" boop ", result[accessor].repr)
+#    debugEcho(" boop ", result[accessor].repr)
     result[accessor] = newIdentNode("FOOP" & name)
     debugEcho("---")
+    debugEcho(result.repr)
+    debugEcho("==++++ ===")
   debugEcho(result.repr)
 
-unquote:
+mongle:
   let `b` = "42"
   let `a` = `b`
   
+echo(FOOPa)
