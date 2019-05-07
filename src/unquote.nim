@@ -32,7 +32,10 @@ proc accessors(exp: NimNode,
                check: Checker = default_checker,
                parent: Accessor = @[]): seq[Derp] {.compileTime.} =
   var ident: NimNode
+  debugEcho("checking at",parent)
+  debugEcho(exp.repr)
   if check(ident, exp):
+    debugEcho("yey")
     result.add(($ident, parent))
     return
   for index in 0..<exp.len:
@@ -50,6 +53,7 @@ proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   debugEcho(result.treeRepr)
   for index in acc:
     debugEcho("III",index)
+    debugEcho(result.repr)
     result = result[index]
     debugEcho("=======")
 
@@ -63,11 +67,11 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     return
   debugEcho("set",exp.repr,"ACC",acc)
   var cur = exp
-  for index in acc[0..^1]:
-    debugEcho("at ", index, ' ', exp.repr)
+  for index in acc[0..^2]:
     cur = cur[index]
+    debugEcho("at ", index, ' ', cur.repr)
   debugEcho("setting",exp.repr, "at", acc[acc.len-1])
-  cur[acc[acc.len-1]] = value
+  cur[acc[acc.len-2]] = value
     
   
 macro unquote(exp: untyped): untyped =
@@ -79,7 +83,7 @@ macro unquote(exp: untyped): untyped =
     debugEcho("doing", name,accessor)
     debugEcho(result.repr)
     debugEcho(" boop ", result[accessor].repr)
-    result[accessor] = newIdentNode("FOOP")
+    result[accessor] = newIdentNode("FOOP" & name)
     debugEcho("---")
   debugEcho(result.repr)
 
