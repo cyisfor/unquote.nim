@@ -17,17 +17,9 @@ from macros import NimNodeKind,
 type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
-proc default_check(ident: var NimNode, exp: NimNode): bool =
-  if exp.kind != nnkPrefix:
-    return false;
-  if $exp[0] != "*":
-    return false
-  ident = exp[1]
-  return true
+type Checker = proc(ident: var NimNode, exp: NimNode): bool
 
-type Checker = type(default_check)  
-
-proc check(symbol: string = "*", kind: nnkPrefix): Checker =
+proc check(symbol: string = "*", kind: NimNodeKind = nnkPrefix): Checker {.compileTime.} =
   proc check(ident: var NimNode, exp: NimNode): bool =
     if exp.kind != kind:
       return false;
@@ -36,12 +28,12 @@ proc check(symbol: string = "*", kind: nnkPrefix): Checker =
     ident = exp[1]
     return true
   return check
-  
+    
 proc accessors(exp: NimNode,
-               check: Checker = default_check,
+               check: Checker = check(),
                parent: Accessor = @[]): seq[Derp] =
   debugEcho("Fuck!")
-  var ident
+  var ident: NimNode
   if check(ident, exp):
     debugEcho("yay ",ident)
     result.add(($ident, parent))
@@ -50,14 +42,7 @@ proc accessors(exp: NimNode,
     var childacc = parent
     childacc.insert(0,index)
     debugEcho("childacc ",index, " ", childacc)
-    result.add(accessors(exp[index], op, kind, childacc))
-
-type Opts = tuple
-  op: string
-  kind: NimNodeKind
-
-proc opts(op: string = "*", kind: NimNodeKind = nnkPrefix): Opts {.compileTime.} =
-  return (op: op, kind: kind)
+    result.add(accessors(exp[index], check, childacc))
 
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   if len(acc) == 1:
@@ -77,10 +62,10 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   exp[acc[acc.len-1]] = value
     
   
-macro unquote(opts: static[Opts], exp: untyped): untyped =
+macro unquote(chek: static[Checker] = check(), exp: untyped): untyped =
   result = newNimNode(nnkStmtList)
   var derp = exp
-  for thing in accessors(derp, opts.op, opts.kind):
+  for thing in accessors(derp, chek):
     let name = newIdentNode(thing[0])
     let accessor = thing[1]
     debugEcho("boing", name, accessor, derp[accessor].repr)
