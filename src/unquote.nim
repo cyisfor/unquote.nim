@@ -1,6 +1,6 @@
 # like quote, but it extracts accessors to an AST
-# since `[]` doesn't return var NimNode, we're forced to use sequences of indexes rather than
-# real references.
+# since macros.`[]` doesn't return var NimNode, we're forced to use sequences of indexes
+# rather than real references.
 
 from macros import NimNodeKind,
                    kind,
@@ -14,11 +14,10 @@ from macros import NimNodeKind,
                    add,
                    treeRepr
 
-type Accessor = seq[int]
+type Accessor* = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
-
-proc default_checker(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
+proc default_checker*(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
   if exp.kind != nnkAccQuoted:
     return false;
   if exp[0].kind != nnkIdent:
@@ -26,16 +25,16 @@ proc default_checker(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
   ident = exp[0]
   return true
 
-type Checker = type(default_checker)
+type Checker* = type(default_checker)
   
-proc unquote(exp: NimNode,
+proc unquote*(exp: NimNode,
              check: Checker = default_checker,
              parent: Accessor = @[]): seq[Derp] {.compileTime.} =
   var ident: NimNode
-  debugEcho("checking at",parent)
-  debugEcho(exp.repr)
+  when defined(debugging):
+    debugEcho("checking at",parent)
+    debugEcho(exp.repr)
   if check(ident, exp):
-    debugEcho("yey")
     result.add(($ident, parent))
     return
   for index in 0..<exp.len:
@@ -66,7 +65,6 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     exp = value
     return
   if len(acc) == 1:
-    debugEcho("fwee ",acc)
     exp[acc[0]] = value
     return
   when defined(debugging):
