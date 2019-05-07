@@ -30,14 +30,17 @@ proc accessors(exp: NimNode,
         yield thing
   return it
 
-macro unquote(op: NimNodeKind = nnkPostfix, exp: untyped): untyped =
-  for (name, accessor) in accessors(exp, op):
+macro unquote(op: static[NimNodeKind] = nnkPostfix, exp: untyped): untyped =
+  debugEcho("wuh")
+  for thing in accessors(exp, op)():
+    let name = thing[0]
+    let accessor = thing[1]
     debugEcho(name, accessor)
 
 unquote(nnkPostFix):
   this
-  is
+  iz
   a
   test*
-  of
-    unquoting
+  offf
+  unquoting
