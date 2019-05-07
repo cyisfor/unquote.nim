@@ -4,7 +4,7 @@
 
 from macros import NimNodeKind,
                    kind,
-                   `[]`,
+                   `[]`,`[]=`,
                    `$`,
                    len,
                    newNimNode,
@@ -14,7 +14,7 @@ from macros import NimNodeKind,
                    add,
                    treeRepr
 
-type Accessor = seq[int]
+type Accessor = distinct seq[int]
 type Derp = tuple[name: string, acc: Accessor]
 
 proc accessors(exp: NimNode,
@@ -44,10 +44,15 @@ proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   if len(acc) == 1:
     return exp[acc[0]]
   return exp[acc[1..^0]]
-proc `[]=`(exp: NimNode, acc: Accessor, value: NimNode): NimNode {.compileTime.} =
+proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
+  if len(acc) == 0:
+    exp = value
+    return
   if len(acc) == 1:
     exp[acc[0]] = value
-  exp[acc[1..^0]] = value
+    return
+  let derp: Accessor = acc[1..^0]
+  exp[acc[0]][derp] = value
   
 macro unquote(opts: static[Opts], exp: untyped): untyped =
   result = newNimNode(nnkStmtList)
