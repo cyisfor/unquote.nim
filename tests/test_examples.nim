@@ -1,5 +1,5 @@
 import unittest
-import unquote/unquote
+import unquote
     
 test "inject variable identifiers":
   macro mongle(exp: untyped): untyped =
