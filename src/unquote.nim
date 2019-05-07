@@ -50,13 +50,15 @@ proc unquote(exp: NimNode,
 {.hint[XDeclaredButNotUsed]: off.}    
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
-  debugEcho(acc)
-  debugEcho(result.treeRepr)
+  when debug:
+    debugEcho(acc)
+    debugEcho(result.treeRepr)
   for index in acc:
-    debugEcho("III",index)
-    debugEcho(result.repr)
     result = result[index]
-    debugEcho("=======")
+    when debug:
+      debugEcho("III",index)
+      debugEcho(result.repr)
+      debugEcho("=======")
 
 {.hint[XDeclaredButNotUsed]: off.}    
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
@@ -67,15 +69,21 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     debugEcho("fwee ",acc)
     exp[acc[0]] = value
     return
-  debugEcho("set",exp.repr,"ACC",acc)
+  when debug:
+    debugEcho("set ACC ",acc)
+    debugEcho(exp.repr)
+    debugEcho("..........................")
   var cur = exp
   for index in acc[0..^2]:
     cur = cur[index]
-    debugEcho("at ", index, ' ', cur.repr)
-  debugEcho("setting",exp.repr, "at", acc[acc.len-1])
+    when debug: debugEcho("at ", index, ' ', cur.repr)
+  when debug:
+    debugEcho("setting at ", acc[acc.len-1], " ", cur[acc[acc.len-1]].repr)
   cur[acc[acc.len-1]] = value
+  when debug:
+    debugEcho(exp.repr)
+    debugEcho("===================")
     
-  
 macro mongle(exp: untyped): untyped =
   result = exp
   let acc = unquote(result)
