@@ -9,7 +9,10 @@ from macros import NimNodeKind,
                    len,
                    newNimNode,
                    newTree,
-                   quote
+                   quote,
+                   newIdentNode, # quote
+                   add,
+                   treeRepr
 
 type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
@@ -41,11 +44,12 @@ macro unquote(opts: static[Opts], exp: untyped): untyped =
   result = newNimNode(nnkStmtList)
   debugEcho("wuh")
   for thing in accessors(exp, opts.op, opts.kind):
-    let name = thing[0]
+    let name = newIdentNode(thing[0])
     let accessor = thing[1]
     debugEcho("boing", name, accessor)
     let expr = quote:
-      let `name`: `Accessor` = `accessor`
+      let `name`: Accessor = @`accessor`
+    debugEcho(expr.repr)
     result.add(expr)
 
 unquote(opts()):
