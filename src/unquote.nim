@@ -2,7 +2,14 @@
 # since `[]` doesn't return var NimNode, we're forced to use sequences of indexes rather than
 # real references.
 
-from macros import NimNodeKind, kind, `[]`,`$`,len
+from macros import NimNodeKind,
+                   kind,
+                   `[]`,
+                   `$`,
+                   len,
+                   newNimNode,
+                   newTree,
+                   quote
 
 type Accessor = seq[int]
 type Derp = tuple[name: string, acc: Accessor]
@@ -21,8 +28,7 @@ proc accessors(exp: NimNode,
     var childacc = parent
     childacc.add(index)
     debugEcho("childacc",childacc)
-    for thing in accessors(exp[index], op, kind, childacc):
-      result.add(thing)
+    result.add(accessors(exp[index], op, kind, childacc))
 
 type Opts = tuple
   op: string
@@ -31,16 +37,20 @@ type Opts = tuple
 proc opts(op: string = "*", kind: NimNodeKind = nnkPrefix): Opts {.compileTime.} =
   return (op: op, kind: kind)
   
-macro unquote(opts: static[Opts] = (op: "*", kind: nnkPrefix), exp: untyped): untyped =
+macro unquote(opts: static[Opts], exp: untyped): untyped =
+  result = newNimNode(nnkStmtList)
   debugEcho("wuh")
   for thing in accessors(exp, opts.op, opts.kind):
     let name = thing[0]
     let accessor = thing[1]
     debugEcho("boing", name, accessor)
+    let expr = quote:
+      let `name`: `Accessor` = `accessor`
+    result.add(expr)
 
 unquote(opts()):
   iz
   a
   *test
-  offf
+  offf [*something]
   unquoting
