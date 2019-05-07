@@ -24,7 +24,7 @@ test "inject variable identifiers":
     let `a` = `b`
 
   check defined(FOOPb)
-  check FOOPa == 42
+  check FOOPa == 43
 
 test "extend a case statement with generated \"of\" branches ":
   proc ofbranches(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
