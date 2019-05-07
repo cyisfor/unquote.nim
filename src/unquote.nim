@@ -2,9 +2,14 @@
 # since `[]` doesn't return var NimNode, we're forced to use sequences of indexes rather than
 # real references.
 
+from macros import NimNodeKind, kind, `[]`,`$`
+
 type Accessor = seq[int]
 
-iterator accessors(exp: NimNode, op = nnkPostfix, parent: Accessor = @[]): seq[tuple[string, Accessor]] =
+iterator accessors(exp: NimNode,
+                   op = nnkPostfix,
+                   parent: Accessor): tuple[name: string, acc: Accessor] =
+  var ident: NimNode
   if exp.kind == op:
     case op:
     of nnkAccQuoted:
@@ -17,13 +22,13 @@ iterator accessors(exp: NimNode, op = nnkPostfix, parent: Accessor = @[]): seq[t
     if ident.kind == nnkIdent:
       yield ($ident, parent)
   for index in 0..<parent.len:
-    let childacc = parent.copy
+    var childacc = parent
     childacc.add(index)
     for thing in accessors(parent[index], op, parent):
       yield thing
 
 macro unquote(exp: untyped, op = nnkPostfix): untyped =
-  for (name, accessor) in accessors(exp):
+  for (name, accessor) in accessors(exp, op, @[]):
     debugEcho(name, accessor)
 
 unquote:
