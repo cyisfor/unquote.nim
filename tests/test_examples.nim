@@ -58,11 +58,11 @@ test "extend a case statement with generated \"of\" branches ":
   addbranches:
     case thing:
     of 0:
-      debugEcho("foo")
+      check true
     else:
-      debugEcho("bar")
-  check "foo" == case thing:
+      check false
+  case thing:
   of 0:
-    "foo"
+    check false
   else:
-    "bar"
+    check true
