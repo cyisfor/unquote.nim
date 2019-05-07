@@ -1,5 +1,12 @@
 import unittest
 import unquote
+
+from macros import newIdentNode,
+                   `[]`,`[]=`,
+                   kind,
+                   NimNodeKind,
+                   copy,
+                   newIntLitNode
     
 test "inject variable identifiers":
   macro mongle(exp: untyped): untyped =
@@ -23,9 +30,8 @@ test "inject variable identifiers":
     let `b` = "42"
     let `a` = `b`
 
-  check defined(FOOPb)
-  check FOOPa == 43
-  check false
+  check FOOPb == "42"
+  check FOOPa == "42"
   
 test "extend a case statement with generated \"of\" branches ":
   proc ofbranches(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
@@ -55,8 +61,8 @@ test "extend a case statement with generated \"of\" branches ":
       debugEcho("foo")
     else:
       debugEcho("bar")
-  case thing:
+  check "foo" == case thing:
   of 0:
-    debugEcho("foo")
+    "foo"
   else:
-    debugEcho("bar")
+    "bar"

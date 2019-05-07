@@ -52,14 +52,12 @@ proc unquote*(exp: NimNode,
       result.add(recurse(exp[index], childacc))
   return recurse(exp, @[])
   
-{.hint[XDeclaredButNotUsed]: off.}    
-proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
+proc `[]`*(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
   for index in acc:
     result = result[index]
 
-{.hint[XDeclaredButNotUsed]: off.}    
-proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
+proc `[]=`*(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
   if len(acc) == 0:
     exp = value
     return
@@ -71,7 +69,7 @@ proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
     cur = cur[index]
   cur[acc[acc.len-1]] = value
 
-proc interpolate(exp: var NimNode, acc: Accessor, values: varargs[NimNode]) {.compileTime.} =
+proc interpolate*(exp: var NimNode, acc: Accessor, values: varargs[NimNode]) {.compileTime.} =
   if len(acc) == 0:
     if len(values) == 0:
       exp = values[0]
