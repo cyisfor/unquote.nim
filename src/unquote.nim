@@ -40,7 +40,7 @@ proc unquote*(exp: NimNode,
              parent: Accessor = @[]): seq[Derp] {.compileTime.} =
   var ident: NimNode
   if check(ident, exp):
-    result.add(($ident, parent))
+    result.add((ident.repr, parent))
     return
   for index in 0..<exp.len:
     var childacc: Accessor
@@ -84,7 +84,9 @@ proc interpolate(exp: var NimNode, acc: Accessor, values: varargs[NimNode]) {.co
   cur.del(index)
   for value in reversed(values):
     cur.insert(index, value)
-  
+
+
+    
 when isMainModule:    
   macro mongle(exp: untyped): untyped =
     result = exp
@@ -116,6 +118,9 @@ when isMainModule:
     return false
   macro addbranches(exp: untyped): untyped =
     result = exp
+    debugEcho("==== before: ==== ")
+    debugEcho(exp.repr)
+    debugEcho("==== after: ==== ")
     for (name, acc) in unquote(result, ofbranches):
       debugEcho("ofBranch",name)
       var branches: array[0..3, NimNode]
@@ -124,7 +129,14 @@ when isMainModule:
         branches[i][0] = newIntLitNode(i)
       interpolate(result, acc, branches)
     debugEcho(result.repr)
+    
   let thing = 2
+  case thing:
+  of 0:
+    debugEcho("foo")
+  else:
+    debugEcho("bar")
+
   addbranches:
     case thing:
     of 0:
