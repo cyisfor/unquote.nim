@@ -44,19 +44,27 @@ proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
     return exp[acc[0]]
   return exp[acc[1..^0]]
 proc `[]=`(exp: var NimNode, acc: Accessor, value: NimNode) {.compileTime.} =
+  if len(acc) == 0:
+    exp = value
+    return
+  if len(acc) == 1:
+    debugEcho("fwee ",acc)
+    exp[acc[0]] = value
+    return
   for index in acc[0..^1]:
-    debugEcho(exp.repr)
+    debugEcho("at ", index, ' ', exp.repr)
     exp = exp[index]
   exp[acc[acc.len-1]] = value
     
   
-macro unquote(opts: static[Opts], exp: var untyped): untyped =
+macro unquote(opts: static[Opts], exp: untyped): untyped =
   result = newNimNode(nnkStmtList)
-  for thing in accessors(exp, opts.op, opts.kind):
+  var derp = exp
+  for thing in accessors(derp, opts.op, opts.kind):
     let name = newIdentNode(thing[0])
     let accessor = thing[1]
-    debugEcho("boing", name, accessor, exp[accessor].repr)
-    exp[accessor] = newIdentNode("FOOP")
+    debugEcho("boing", name, accessor, derp[accessor].repr)
+    derp[accessor] = newIdentNode("FOOP")
     let expr = quote:
       let `name`: Accessor = @`accessor`
     debugEcho(expr.repr)
