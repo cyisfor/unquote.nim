@@ -36,21 +36,22 @@ proc default_checker*(ident: var NimNode, exp: NimNode): bool {.compileTime.} =
 type Checker* = type(default_checker)
   
 proc unquote*(exp: NimNode,
-             check: Checker = default_checker,
-             parent: Accessor = @[]): seq[Derp] {.compileTime.} =
-  var ident: NimNode
-  if check(ident, exp):
-    result.add((ident.repr, parent))
-    return
-  for index in 0..<exp.len:
-    var childacc: Accessor
-    if parent.len == 0:
-      childacc = @[index]
-    else:
-      childacc = parent
-      childacc.add(index)
-    result.add(unquote(exp[index], check, childacc))
-
+             check: Checker = default_checker): seq[Derp] {.compileTime.} =
+  proc recurse(exp: NimNode, parent: Accessor): seq[Derp] =
+    var ident: NimNode
+    if check(ident, exp):
+      result.add((ident.repr, parent))
+      return
+    for index in 0..<exp.len:
+      var childacc: Accessor
+      if parent.len == 0:
+        childacc = @[index]
+      else:
+        childacc = parent
+        childacc.add(index)
+      result.add(recurse(exp[index], childacc))
+  return recurse(exp, @[])
+  
 {.hint[XDeclaredButNotUsed]: off.}    
 proc `[]`(exp: NimNode, acc: Accessor): NimNode {.compileTime.} =
   result = exp
@@ -131,11 +132,6 @@ when isMainModule:
     debugEcho(result.repr)
     
   let thing = 2
-  case thing:
-  of 0:
-    debugEcho("foo")
-  else:
-    debugEcho("bar")
 
   addbranches:
     case thing:
@@ -143,3 +139,8 @@ when isMainModule:
       debugEcho("foo")
     else:
       debugEcho("bar")
+  case thing:
+  of 0:
+    debugEcho("foo")
+  else:
+    debugEcho("bar")
